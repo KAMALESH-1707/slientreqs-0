@@ -16,11 +16,11 @@ export const SceneEdgeProcessingOverlay: React.FC<SceneEdgeProcessingOverlayProp
 
   const pipeline = [
     { label: 'CAMERA IMAGE', sub: 'FLIR LWIR Raw Frame (640x512)', icon: Camera },
-    { label: 'JETSON ORIN NANO', sub: 'Onboard Edge Computer (40 TOPS)', icon: Cpu },
+    { label: 'JETSON NANO', sub: 'Onboard Edge Computer (128-core Maxwell GPU)', icon: Cpu },
     { label: 'EDGE AI PROCESSING', sub: 'Quantized YOLO-Thermal TensorRT', icon: Zap },
-    { label: 'SURVIVOR DETECTED', sub: 'Green Target Bounding Box (98.4%)', icon: CheckCircle2, highlight: true },
-    { label: 'LOCATION IDENTIFIED', sub: '34°10\'42.1"N, 77°35\'18.4"E', icon: MapPin },
-    { label: 'RESCUE TEAM DISPATCH', sub: 'Telemetry Packet Encoded', icon: Radio },
+    { label: 'SURVIVOR DETECTED', sub: 'Green Target Box (98.6% Conf)', icon: CheckCircle2, highlight: true },
+    { label: 'LOCATION IDENTIFIED', sub: '28°36\'12.4"N, 77°12\'45.8"E', icon: MapPin },
+    { label: 'RESCUE TEAM DISPATCH', sub: 'USAR Telemetry Encoded', icon: Radio },
   ];
 
   return (
@@ -29,7 +29,7 @@ export const SceneEdgeProcessingOverlay: React.FC<SceneEdgeProcessingOverlayProp
       <div className="flex items-center justify-between">
         <div className="bg-[#1E1714] text-white px-5 py-2.5 rounded-2xl border-2 border-white shadow-[4px_4px_0px_#B9FF66] font-display font-extrabold text-sm uppercase flex items-center gap-2">
           <Cpu className="w-4 h-4 text-[#B9FF66]" />
-          JETSON ORIN NANO · ONBOARD EDGE-AI
+          JETSON NANO · ONBOARD EDGE-AI
         </div>
 
         <div className="bg-[#FAF5EF]/90 backdrop-blur-md px-4 py-2 rounded-xl border border-[#1E1714]/20 text-xs font-mono text-[#1E1714] font-bold">
@@ -46,7 +46,7 @@ export const SceneEdgeProcessingOverlay: React.FC<SceneEdgeProcessingOverlayProp
                 Step-By-Step Edge Pipeline
               </span>
               <h3 className="font-display font-extrabold text-2xl md:text-3xl text-[#1E1714] mt-1.5">
-                From Raw Sensor Feed to Ground Rescue
+                From Rubble Sensor Feed to Ground Rescue
               </h3>
             </div>
             <div className="text-right font-mono text-xs text-[#1E1714]/70">
@@ -113,7 +113,7 @@ export const SceneEdgeProcessingOverlay: React.FC<SceneEdgeProcessingOverlayProp
               </div>
             </div>
             <div className="hidden sm:block text-right font-mono text-xs text-white/60">
-              INFERENCE SPEED: 24 FPS
+              JETSON NANO ONBOARD
             </div>
           </div>
         </div>
@@ -121,7 +121,7 @@ export const SceneEdgeProcessingOverlay: React.FC<SceneEdgeProcessingOverlayProp
 
       {/* Bottom Disclaimer & Note */}
       <div className="max-w-xl mx-auto bg-[#FAF5EF]/90 text-[#1E1714] px-4 py-2 rounded-xl border border-[#1E1714]/20 text-center text-[11px] font-mono">
-        Simulation of the proposed onboard Jetson Orin Nano edge-AI architecture for SIH 2026.
+        Simulation of the proposed onboard Jetson Nano edge-AI architecture for SIH 2026.
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "name": "SilentResQ — Autonomous Disaster Response UAV",
-  "description": "Interactive visual prototype for SIH 2026: Autonomous hybrid VTOL UAV with Jetson edge AI and thermal sensing for rapid landslide survivor detection.",
+  "description": "Interactive visual prototype for SIH 2026: Autonomous hybrid VTOL UAV with Jetson Nano edge AI and thermal sensing for rapid earthquake collapsed building survivor detection.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { StorySceneId } from '../types/story';
 
@@ -20,11 +20,13 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
 
-  // References to animated elements
-  const bikeRiderGroupRef = useRef<THREE.Group | null>(null);
-  const bikeWheelsRef = useRef<THREE.Mesh[]>([]);
-  const rocksRef = useRef<THREE.Group | null>(null);
+  // Group references
+  const standingTowerGroupRef = useRef<THREE.Group | null>(null);
+  const collapsedRubbleGroupRef = useRef<THREE.Group | null>(null);
+  const citySkylineRef = useRef<THREE.Group | null>(null);
   const dustParticlesRef = useRef<THREE.Points | null>(null);
+  const smokeParticlesRef = useRef<THREE.Points | null>(null);
+  const seismicRingsRef = useRef<THREE.Mesh[]>([]);
   const uavFlightRef = useRef<THREE.Group | null>(null);
   const uavRotorsRef = useRef<THREE.Group[]>([]);
   const survivorGlowRef = useRef<THREE.Mesh | null>(null);
@@ -40,13 +42,14 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const skyColor = 0xc8d5e0;
-    const groundFogColor = 0xb7c3cf;
-    scene.background = new THREE.Color(skyColor);
-    scene.fog = new THREE.FogExp2(groundFogColor, 0.009);
+    // Atmospheric color palette
+    const citySkyColor = 0xa4b6c6;
+    const cityFogColor = 0x889ba8;
+    scene.background = new THREE.Color(citySkyColor);
+    scene.fog = new THREE.FogExp2(cityFogColor, 0.007);
 
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 350);
-    camera.position.set(0, 18, 42);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.5, 550);
+    camera.position.set(0, 24, 52);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
@@ -59,204 +62,269 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // 2. Realistic Himalayan Lighting
-    const ambientLight = new THREE.AmbientLight(0xdde3ea, 1.3);
+    // 2. Lighting Setup
+    const ambientLight = new THREE.AmbientLight(0xd9e4ed, 1.4);
     scene.add(ambientLight);
 
-    const sunLight = new THREE.DirectionalLight(0xfffaed, 2.9);
-    sunLight.position.set(25, 50, 30);
+    const sunLight = new THREE.DirectionalLight(0xfff6e8, 2.9);
+    sunLight.position.set(45, 80, 50);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;
     sunLight.shadow.mapSize.height = 2048;
     sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 130;
-    sunLight.shadow.camera.left = -35;
-    sunLight.shadow.camera.right = 35;
-    sunLight.shadow.camera.top = 35;
-    sunLight.shadow.camera.bottom = -35;
+    sunLight.shadow.camera.far = 220;
+    sunLight.shadow.camera.left = -60;
+    sunLight.shadow.camera.right = 60;
+    sunLight.shadow.camera.top = 60;
+    sunLight.shadow.camera.bottom = -60;
     scene.add(sunLight);
 
     const fillLight = new THREE.DirectionalLight(0x7dd3fc, 0.85);
-    fillLight.position.set(-30, 20, -20);
+    fillLight.position.set(-45, 30, -35);
     scene.add(fillLight);
 
-    // 3. Terrain Generation (Himalayan Mountain Pass)
-    const terrainGeo = new THREE.PlaneGeometry(180, 180, 100, 100);
-    terrainGeo.rotateX(-Math.PI / 2);
+    // 3. Ground & Asphalt City Grid
+    const groundGeo = new THREE.PlaneGeometry(320, 320);
+    groundGeo.rotateX(-Math.PI / 2);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9 });
+    const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+    groundMesh.receiveShadow = true;
+    scene.add(groundMesh);
 
-    const posAttr = terrainGeo.attributes.position;
-    for (let i = 0; i < posAttr.count; i++) {
-      const vx = posAttr.getX(i);
-      const vz = posAttr.getZ(i);
+    // City Roads with asphalt texture
+    const roadMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.95 });
+    const roadGeo = new THREE.PlaneGeometry(18, 320);
+    roadGeo.rotateX(-Math.PI / 2);
+    const road1 = new THREE.Mesh(roadGeo, roadMat);
+    road1.position.set(0, 0.02, 0);
+    scene.add(road1);
 
-      let h = (vx * -0.38) + (vz * -0.22);
-      h += Math.sin(vx * 0.11) * Math.cos(vz * 0.11) * 4.5;
-      h += Math.sin(vx * 0.035) * 8.5;
+    const road2 = new THREE.Mesh(roadGeo, roadMat);
+    road2.rotateY(Math.PI / 2);
+    road2.position.set(0, 0.03, 0);
+    scene.add(road2);
 
-      // Carve out flat mountain road bench
-      const roadCurve = Math.sin(vz * 0.08) * 12.0;
-      const distToRoad = Math.abs(vx - roadCurve);
-      if (distToRoad < 4.8) {
-        h = h * 0.12 + 2.5;
-      }
-
-      posAttr.setY(i, h);
+    // SEISMIC SHOCKWAVE EXPANDING RINGS ON THE GROUND
+    seismicRingsRef.current = [];
+    for (let r = 0; r < 3; r++) {
+      const ringGeo = new THREE.RingGeometry(1.0, 2.2, 48);
+      ringGeo.rotateX(-Math.PI / 2);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0xff3b11,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0,
+      });
+      const sRing = new THREE.Mesh(ringGeo, ringMat);
+      sRing.position.set(0, 0.08, 0);
+      scene.add(sRing);
+      seismicRingsRef.current.push(sRing);
     }
-    terrainGeo.computeVertexNormals();
 
-    const rockMat = new THREE.MeshStandardMaterial({
-      color: 0x82746a,
+    // 4. Metropolitan City Skyline (Surrounding High-Rise Skyscrapers)
+    const skylineGroup = new THREE.Group();
+    citySkylineRef.current = skylineGroup;
+
+    const buildingGlassMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.15, metalness: 0.8 });
+    const concreteBuildingMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.7, metalness: 0.2 });
+    const darkTowerMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.3, metalness: 0.6 });
+
+    const surroundingBuildings = [
+      { x: -38, z: -34, w: 16, d: 16, h: 58, mat: buildingGlassMat },
+      { x: 40, z: -28, w: 18, d: 15, h: 66, mat: darkTowerMat },
+      { x: -46, z: 24, w: 14, d: 18, h: 48, mat: concreteBuildingMat },
+      { x: 44, z: 28, w: 15, d: 16, h: 54, mat: buildingGlassMat },
+      { x: -26, z: -66, w: 20, d: 20, h: 74, mat: darkTowerMat },
+      { x: 28, z: -70, w: 22, d: 18, h: 72, mat: buildingGlassMat },
+      { x: -62, z: -48, w: 16, d: 14, h: 46, mat: concreteBuildingMat },
+      { x: 62, z: -44, w: 18, d: 16, h: 58, mat: buildingGlassMat },
+    ];
+
+    surroundingBuildings.forEach((b) => {
+      const bGeo = new THREE.BoxGeometry(b.w, b.h, b.d);
+      const bMesh = new THREE.Mesh(bGeo, b.mat);
+      bMesh.position.set(b.x, b.h / 2, b.z);
+      bMesh.castShadow = true;
+      bMesh.receiveShadow = true;
+      skylineGroup.add(bMesh);
+
+      // Window strips
+      const winGeo = new THREE.BoxGeometry(b.w + 0.1, 0.75, b.d + 0.1);
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.15 });
+      for (let y = 3; y < b.h - 2; y += 3) {
+        const win = new THREE.Mesh(winGeo, winMat);
+        win.position.set(b.x, y, b.z);
+        skylineGroup.add(win);
+      }
+    });
+    scene.add(skylineGroup);
+
+    // 5. THE STANDING 30-STORY COMMERCIAL TOWER (Scene 1 & Pre-Collapse)
+    const standingTowerGroup = new THREE.Group();
+    standingTowerGroupRef.current = standingTowerGroup;
+    standingTowerGroup.position.set(0, 0, 0);
+
+    const numFloors = 30;
+    const floorHeight = 1.0;
+    const towerWidth = 14;
+    const towerDepth = 14;
+
+    const slabMat = new THREE.MeshStandardMaterial({ color: 0x78716c, roughness: 0.85, metalness: 0.1 });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      roughness: 0.1,
+      metalness: 0.85,
+      transparent: true,
+      opacity: 0.6,
+    });
+
+    for (let f = 0; f < numFloors; f++) {
+      const floorY = (f + 0.5) * floorHeight;
+
+      // Concrete floor slab
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(towerWidth, 0.22, towerDepth), slabMat);
+      slab.position.set(0, floorY, 0);
+      slab.castShadow = true;
+      standingTowerGroup.add(slab);
+
+      // Glass windows (leave 12th floor f=11 open for viewing person working on PC)
+      if (f !== 11) {
+        const glass = new THREE.Mesh(new THREE.BoxGeometry(towerWidth - 0.2, 0.75, towerDepth - 0.2), glassMat);
+        glass.position.set(0, floorY + 0.48, 0);
+        standingTowerGroup.add(glass);
+      }
+    }
+
+    // 12th Floor Office Setup
+    const floor12Y = 11 * floorHeight + 0.22;
+    const deskMat = new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.4 });
+    const desk = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 1.2), deskMat);
+    desk.position.set(0, floor12Y + 0.75, 0);
+    standingTowerGroup.add(desk);
+
+    // PC Monitor with glowing screen
+    const monitor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.9, 0.55, 0.05),
+      new THREE.MeshStandardMaterial({ color: 0x18181b })
+    );
+    monitor.position.set(0, floor12Y + 1.2, 0.3);
+    standingTowerGroup.add(monitor);
+
+    const monitorScreen = new THREE.Mesh(
+      new THREE.BoxGeometry(0.82, 0.48, 0.02),
+      new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+    );
+    monitorScreen.position.set(0, floor12Y + 1.2, 0.26);
+    standingTowerGroup.add(monitorScreen);
+
+    // Person working in GREEN (GREEN = SURVIVOR / PERSON)
+    const greenPersonMat = new THREE.MeshStandardMaterial({
+      color: 0x10b981,
+      emissive: 0x059669,
+      emissiveIntensity: 0.8,
+      roughness: 0.35,
+    });
+    const standingPerson = new THREE.Group();
+    standingPerson.position.set(0, floor12Y + 0.6, -0.45);
+
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.58, 0.28), greenPersonMat);
+    torso.position.set(0, 0.42, 0);
+    standingPerson.add(torso);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 16, 16), greenPersonMat);
+    head.position.set(0, 0.85, 0.05);
+    standingPerson.add(head);
+
+    standingTowerGroup.add(standingPerson);
+    scene.add(standingTowerGroup);
+
+    // 6. THE EARTHQUAKE COLLAPSED RUBBLE MOUND (Permanent Post-Disaster Zone)
+    const collapsedRubbleGroup = new THREE.Group();
+    collapsedRubbleGroupRef.current = collapsedRubbleGroup;
+    collapsedRubbleGroup.visible = false;
+    scene.add(collapsedRubbleGroup);
+
+    const rubbleConcreteMat = new THREE.MeshStandardMaterial({
+      color: 0x57534e,
       roughness: 0.95,
       metalness: 0.1,
       flatShading: true,
     });
-    const terrainMesh = new THREE.Mesh(terrainGeo, rockMat);
-    terrainMesh.receiveShadow = true;
-    scene.add(terrainMesh);
+    const crushedDebrisMat = new THREE.MeshStandardMaterial({
+      color: 0x44403c,
+      roughness: 0.95,
+      flatShading: true,
+    });
+    const rebarMat = new THREE.MeshStandardMaterial({
+      color: 0xb91c1c,
+      roughness: 0.5,
+      metalness: 0.8,
+    });
 
-    // Hairpin Road Surface
-    const roadPoints: THREE.Vector3[] = [];
-    for (let z = -60; z <= 60; z += 1.5) {
-      const x = Math.sin(z * 0.08) * 12.0;
-      roadPoints.push(new THREE.Vector3(x, 2.7, z));
+    // 60+ Tilted, shattered concrete slabs and structural pillars
+    for (let i = 0; i < 60; i++) {
+      const slabW = 6.0 + Math.random() * 8.0;
+      const slabD = 6.0 + Math.random() * 8.0;
+      const slabH = 0.35 + Math.random() * 0.4;
+
+      const slab = new THREE.Mesh(new THREE.BoxGeometry(slabW, slabH, slabD), rubbleConcreteMat);
+      slab.castShadow = true;
+      slab.receiveShadow = true;
+
+      const distFromCenter = Math.random() * 13.0;
+      const angle = Math.random() * Math.PI * 2;
+      const rx = Math.cos(angle) * distFromCenter;
+      const rz = Math.sin(angle) * distFromCenter;
+      const ry = Math.max(0.3, 4.5 - (distFromCenter / 13.0) * 4.0 + (Math.random() - 0.5) * 1.2);
+
+      slab.position.set(rx, ry, rz);
+      slab.rotation.set(
+        (Math.random() - 0.5) * 0.75,
+        Math.random() * Math.PI,
+        (Math.random() - 0.5) * 0.75
+      );
+      collapsedRubbleGroup.add(slab);
     }
-    const roadCurve = new THREE.CatmullRomCurve3(roadPoints);
-    const roadGeo = new THREE.TubeGeometry(roadCurve, 90, 2.8, 6, false);
-    roadGeo.scale(1, 0.035, 1);
-    const roadMat = new THREE.MeshStandardMaterial({
-      color: 0x383431,
-      roughness: 0.8,
-      metalness: 0.15,
-    });
-    const roadMesh = new THREE.Mesh(roadGeo, roadMat);
-    roadMesh.receiveShadow = true;
-    scene.add(roadMesh);
 
-    // Distant Snow Peaks
-    const distantPeaksGeo = new THREE.ConeGeometry(40, 52, 5);
-    const peakMat = new THREE.MeshStandardMaterial({ color: 0xdde6ed, roughness: 0.8 });
-    const peak1 = new THREE.Mesh(distantPeaksGeo, peakMat);
-    peak1.position.set(-70, 14, -80);
-    scene.add(peak1);
+    // Crushed concrete boulders
+    for (let i = 0; i < 75; i++) {
+      const bRad = 0.5 + Math.random() * 1.4;
+      const boulder = new THREE.Mesh(new THREE.DodecahedronGeometry(bRad, 1), crushedDebrisMat);
+      boulder.castShadow = true;
+      boulder.receiveShadow = true;
 
-    const peak2 = new THREE.Mesh(distantPeaksGeo, peakMat);
-    peak2.position.set(40, 20, -90);
-    peak2.scale.set(1.25, 1.25, 1.25);
-    scene.add(peak2);
+      const dist = Math.random() * 16.0;
+      const ang = Math.random() * Math.PI * 2;
+      boulder.position.set(
+        Math.cos(ang) * dist,
+        Math.random() * 3.8,
+        Math.sin(ang) * dist
+      );
+      boulder.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      collapsedRubbleGroup.add(boulder);
+    }
 
-    // 4. MOTORBIKE / MOTORCYCLE WITH HUMAN RIDER IN GREEN (Riding fast!)
-    const bikeRiderGroup = new THREE.Group();
-    bikeRiderGroupRef.current = bikeRiderGroup;
+    // Protruding twisted steel rebar beams
+    for (let i = 0; i < 26; i++) {
+      const rebar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 4.5 + Math.random() * 3.0, 8),
+        rebarMat
+      );
+      rebar.position.set(
+        (Math.random() - 0.5) * 15.0,
+        2.0 + Math.random() * 3.0,
+        (Math.random() - 0.5) * 15.0
+      );
+      rebar.rotation.set(
+        (Math.random() - 0.5) * 1.5,
+        Math.random() * Math.PI,
+        (Math.random() - 0.5) * 1.5
+      );
+      collapsedRubbleGroup.add(rebar);
+    }
 
-    // Materials
-    const darkBikeMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.35, metalness: 0.8 });
-    const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, roughness: 0.2, metalness: 0.9 });
-    const tireMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
-    const redTailMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    const headlightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-
-    // Green Human Rider Material (GREEN = SURVIVOR / PERSON)
-    const greenHumanMat = new THREE.MeshStandardMaterial({
-      color: 0x10b981,
-      emissive: 0x059669,
-      emissiveIntensity: 0.75,
-      roughness: 0.35,
-    });
-    const greenJacketMat = new THREE.MeshStandardMaterial({
-      color: 0x059669,
-      emissive: 0x047857,
-      emissiveIntensity: 0.6,
-      roughness: 0.4,
-    });
-
-    // --- Motorbike Chassis ---
-    const bikeFrame = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.45, 1.4), darkBikeMat);
-    bikeFrame.position.set(0, 0.65, 0);
-    bikeRiderGroup.add(bikeFrame);
-
-    // Fuel Tank
-    const fuelTank = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.6, 12), darkBikeMat);
-    fuelTank.rotateX(Math.PI / 2);
-    fuelTank.position.set(0, 0.88, 0.15);
-    bikeRiderGroup.add(fuelTank);
-
-    // Wheels (Front & Rear)
-    const wheelGeo = new THREE.CylinderGeometry(0.34, 0.34, 0.16, 24);
-    wheelGeo.rotateZ(Math.PI / 2);
-
-    const rearWheel = new THREE.Mesh(wheelGeo, tireMat);
-    rearWheel.position.set(0, 0.34, -0.65);
-    bikeRiderGroup.add(rearWheel);
-
-    const frontWheel = new THREE.Mesh(wheelGeo, tireMat);
-    frontWheel.position.set(0, 0.34, 0.75);
-    bikeRiderGroup.add(frontWheel);
-
-    bikeWheelsRef.current = [rearWheel, frontWheel];
-
-    // Handlebars
-    const handleBar = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.05, 0.05), chromeMat);
-    handleBar.position.set(0, 1.1, 0.45);
-    bikeRiderGroup.add(handleBar);
-
-    // Headlight
-    const headlight = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.05, 16), headlightMat);
-    headlight.rotateX(Math.PI / 2);
-    headlight.position.set(0, 0.88, 0.8);
-    bikeRiderGroup.add(headlight);
-
-    // Taillight
-    const taillight = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.06, 0.04), redTailMat);
-    taillight.position.set(0, 0.75, -0.72);
-    bikeRiderGroup.add(taillight);
-
-    // Exhaust Pipe
-    const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.8, 12), chromeMat);
-    exhaust.rotateX(Math.PI / 2);
-    exhaust.position.set(0.22, 0.35, -0.2);
-    bikeRiderGroup.add(exhaust);
-
-    // --- Human Rider Structure in Green (Anatomical riding posture) ---
-    // Rider Pelvis / Seat
-    const riderPelvis = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.3), greenHumanMat);
-    riderPelvis.position.set(0, 0.95, -0.15);
-    bikeRiderGroup.add(riderPelvis);
-
-    // Rider Torso (Leaning forward into the wind)
-    const riderTorso = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.55, 0.26), greenJacketMat);
-    riderTorso.position.set(0, 1.35, 0.05);
-    riderTorso.rotation.x = 0.35; // forward aggressive racing lean
-    bikeRiderGroup.add(riderTorso);
-
-    // Rider Neck & Helmet/Head
-    const riderHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), greenHumanMat);
-    riderHead.position.set(0, 1.82, 0.22);
-    bikeRiderGroup.add(riderHead);
-
-    // Rider Arms (reaching forward to handlebars)
-    const leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.65, 8), greenHumanMat);
-    leftArm.position.set(-0.28, 1.32, 0.28);
-    leftArm.rotation.set(0.65, 0, -0.3);
-    bikeRiderGroup.add(leftArm);
-
-    const rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.055, 0.65, 8), greenHumanMat);
-    rightArm.position.set(0.28, 1.32, 0.28);
-    rightArm.rotation.set(0.65, 0, 0.3);
-    bikeRiderGroup.add(rightArm);
-
-    // Rider Legs (tucked in riding position)
-    const leftLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.065, 0.65, 8), greenHumanMat);
-    leftLeg.position.set(-0.24, 0.72, 0.05);
-    leftLeg.rotation.set(-0.4, 0, -0.2);
-    bikeRiderGroup.add(leftLeg);
-
-    const rightLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.065, 0.65, 8), greenHumanMat);
-    rightLeg.position.set(0.24, 0.72, 0.05);
-    rightLeg.rotation.set(-0.4, 0, 0.2);
-    bikeRiderGroup.add(rightLeg);
-
-    // Ground Target Beacon Ring
-    const ringGeo = new THREE.RingGeometry(1.0, 1.45, 32);
+    // GREEN Thermal Ground Target Beacon (Survivor buried underneath 12th floor slab void)
+    const ringGeo = new THREE.RingGeometry(1.4, 2.2, 32);
     ringGeo.rotateX(-Math.PI / 2);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0x10b981,
@@ -265,85 +333,23 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
       opacity: 0.9,
     });
     const targetRing = new THREE.Mesh(ringGeo, ringMat);
-    targetRing.position.y = 0.05;
-    bikeRiderGroup.add(targetRing);
+    targetRing.position.set(0, 0.15, 0);
+    collapsedRubbleGroup.add(targetRing);
     survivorGlowRef.current = targetRing;
 
-    bikeRiderGroup.position.set(4.5, 2.7, 5.0);
-    scene.add(bikeRiderGroup);
-
-    // 5. REALISTIC LANDSLIDE: BOULDERS & FALLING MOUNTAIN DEBRIS
-    const rocksGroup = new THREE.Group();
-    rocksRef.current = rocksGroup;
-
-    const rockColors = [0x4d423b, 0x61544a, 0x3d352f, 0x736458, 0x54473e];
-    const rockMeshes: {
-      mesh: THREE.Mesh;
-      origY: number;
-      origX: number;
-      origZ: number;
-      targetY: number;
-      targetX: number;
-      targetZ: number;
-      rotSpeed: { x: number; y: number; z: number };
-    }[] = [];
-
-    // Create 85 varied boulders
-    for (let i = 0; i < 85; i++) {
-      const isGiantBoulder = i < 12;
-      const rockRadius = isGiantBoulder ? 1.5 + Math.random() * 1.8 : 0.5 + Math.random() * 1.2;
-
-      const rockMesh = new THREE.Mesh(
-        new THREE.DodecahedronGeometry(rockRadius, 1),
-        new THREE.MeshStandardMaterial({
-          color: rockColors[i % rockColors.length],
-          roughness: 0.95,
-          flatShading: true,
-        })
-      );
-      rockMesh.castShadow = true;
-      rockMesh.receiveShadow = true;
-
-      const startX = -14 + (Math.random() - 0.5) * 10;
-      const startY = 24 + Math.random() * 18;
-      const startZ = 4 + (Math.random() - 0.5) * 14;
-
-      const targetX = 4.2 + (Math.random() - 0.5) * 7.5;
-      const targetY = 2.8 + Math.random() * 2.8;
-      const targetZ = 4.8 + (Math.random() - 0.5) * 8.0;
-
-      rockMesh.position.set(startX, startY, startZ);
-      rocksGroup.add(rockMesh);
-      rockMeshes.push({
-        mesh: rockMesh,
-        origX: startX,
-        origY: startY,
-        origZ: startZ,
-        targetX,
-        targetY,
-        targetZ,
-        rotSpeed: {
-          x: (Math.random() - 0.5) * 0.12,
-          y: (Math.random() - 0.5) * 0.12,
-          z: (Math.random() - 0.5) * 0.12,
-        },
-      });
-    }
-    scene.add(rocksGroup);
-
-    // Dust Cloud Particles
-    const dustCount = 240;
+    // 7. EARTHQUAKE DUST PLUME PARTICLE SYSTEM
+    const dustCount = 450;
     const dustGeo = new THREE.BufferGeometry();
     const dustPositions = new Float32Array(dustCount * 3);
     for (let i = 0; i < dustCount; i++) {
-      dustPositions[i * 3] = 4.5 + (Math.random() - 0.5) * 20;
-      dustPositions[i * 3 + 1] = 2.5 + Math.random() * 10;
-      dustPositions[i * 3 + 2] = 5.0 + (Math.random() - 0.5) * 20;
+      dustPositions[i * 3] = (Math.random() - 0.5) * 40;
+      dustPositions[i * 3 + 1] = Math.random() * 26;
+      dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 40;
     }
     dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
     const dustMat = new THREE.PointsMaterial({
-      color: 0xbdb0a2,
-      size: 2.2,
+      color: 0xab9f93,
+      size: 3.8,
       transparent: true,
       opacity: 0,
       depthWrite: false,
@@ -352,7 +358,28 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
     scene.add(dustParticles);
     dustParticlesRef.current = dustParticles;
 
-    // 6. EXACT SILENTRESQ ORANGE QUADPLANE IN THE SKY
+    // Smoke over ruins
+    const smokeCount = 200;
+    const smokeGeo = new THREE.BufferGeometry();
+    const smokePositions = new Float32Array(smokeCount * 3);
+    for (let i = 0; i < smokeCount; i++) {
+      smokePositions[i * 3] = (Math.random() - 0.5) * 22;
+      smokePositions[i * 3 + 1] = 1.0 + Math.random() * 14;
+      smokePositions[i * 3 + 2] = (Math.random() - 0.5) * 22;
+    }
+    smokeGeo.setAttribute('position', new THREE.BufferAttribute(smokePositions, 3));
+    const smokeMat = new THREE.PointsMaterial({
+      color: 0x52525b,
+      size: 4.8,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
+    });
+    const smokeParticles = new THREE.Points(smokeGeo, smokeMat);
+    collapsedRubbleGroup.add(smokeParticles);
+    smokeParticlesRef.current = smokeParticles;
+
+    // 8. EXACT SILENTRESQ ORANGE QUADPLANE IN THE SKY (WITH JETSON NANO)
     const uavFlightGroup = new THREE.Group();
     uavFlightRef.current = uavFlightGroup;
 
@@ -364,7 +391,7 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
     const uavFuselage = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.24, 2.8), orangeFlightMat);
     uavFlightGroup.add(uavFuselage);
 
-    // Front Nose & Camera
+    // Front Nose & Camera Sensor
     const uavNose = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.7, 4), orangeFlightMat);
     uavNose.rotateX(Math.PI / 2);
     uavNose.rotateY(Math.PI / 4);
@@ -376,7 +403,7 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
     uavCam.rotateX(Math.PI / 2);
     uavFlightGroup.add(uavCam);
 
-    // Main Rectangular Orange Wing
+    // Main Wing
     const uavMainWing = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.05, 0.48), orangeFlightMat);
     uavMainWing.position.set(0, 0.12, -0.32);
     uavFlightGroup.add(uavMainWing);
@@ -400,7 +427,7 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
       { x: -0.85, z: -0.85, rot: 0.45 },
       { x: 0.85, z: -0.85, rot: -0.45 },
     ];
-    boomAngles.forEach(b => {
+    boomAngles.forEach((b) => {
       const bm = new THREE.Mesh(flightBoomGeo, orangeFlightMat);
       bm.position.set(b.x, 0.04, b.z);
       bm.rotation.y = b.rot;
@@ -427,12 +454,11 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
       uavRotorsRef.current.push(propGroup);
     });
 
-    uavFlightGroup.position.set(15, 32, 25);
+    uavFlightGroup.position.set(15, 42, 25);
     uavFlightGroup.scale.set(1.4, 1.4, 1.4);
     scene.add(uavFlightGroup);
 
-    // Initial camera
-    camera.lookAt(4.5, 3.0, 5.0);
+    camera.lookAt(0, floor12Y + 2, 0);
 
     const handleResize = () => {
       if (!container || !rendererRef.current || !cameraRef.current) return;
@@ -444,7 +470,7 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
     };
     window.addEventListener('resize', handleResize);
 
-    // Master Animation Loop
+    // Animation Loop
     let animId: number;
     let clock = new THREE.Clock();
 
@@ -463,134 +489,181 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
         survivorGlowRef.current.scale.set(pulse, pulse, pulse);
       }
 
-      // Spin bike wheels when riding fast
-      if (currentScene === 'journey' || (currentScene === 'landslide' && sceneProgress < 0.4)) {
-        bikeWheelsRef.current.forEach(w => {
-          w.rotation.x -= 0.35; // fast forward rotation
-        });
+      // Drift lingering smoke particles
+      if (smokeParticlesRef.current) {
+        smokeParticlesRef.current.rotation.y = elapsed * 0.04;
       }
 
-      // Camera & Scene State Choreography
-      if (cameraRef.current && bikeRiderGroupRef.current && uavFlightRef.current) {
+      // Master State Logic
+      if (cameraRef.current && standingTowerGroupRef.current && collapsedRubbleGroupRef.current && uavFlightRef.current) {
         const cam = cameraRef.current;
-        const bike = bikeRiderGroupRef.current;
+        const standing = standingTowerGroupRef.current;
+        const rubble = collapsedRubbleGroupRef.current;
         const uav = uavFlightRef.current;
+        const skyline = citySkylineRef.current;
 
         switch (currentScene) {
           case 'opening':
           case 'journey': {
-            // FAST RIDING ALONG THE MOUNTAIN ROAD
-            bike.visible = true;
-            bike.rotation.set(0, -Math.PI / 2, 0); // facing forward
+            // SCENE 1: THE 30-STORY TOWER - 12TH FLOOR OFFICE
+            standing.visible = true;
+            standing.position.set(0, 0, 0);
+            standing.rotation.set(0, 0, 0);
+            standing.scale.set(1, 1, 1);
 
-            // High speed traversal along road curve
-            const speed = elapsed * 3.8;
-            const bikeZ = 5.0 + Math.cos(speed * 0.5) * 16.0;
-            const bikeX = Math.sin(bikeZ * 0.08) * 12.0;
-            bike.position.set(bikeX, 2.7, bikeZ);
-
-            // Natural motorcycle lean into curves
-            const lean = Math.cos(bikeZ * 0.08) * 0.28;
-            bike.rotation.z = lean;
-
-            // Dynamic tracking chase camera
-            cam.position.x = bike.position.x + 10.0;
-            cam.position.y = 8.5;
-            cam.position.z = bike.position.z + 14.0;
-            cam.lookAt(bike.position.x, 3.2, bike.position.z);
-
-            // Reset rocks
-            rockMeshes.forEach(r => {
-              r.mesh.position.set(r.origX, r.origY, r.origZ);
-            });
+            rubble.visible = false;
             dustMat.opacity = 0;
-            uav.position.set(25, 45, 35);
+            seismicRingsRef.current.forEach((sr) => { (sr.material as THREE.MeshBasicMaterial).opacity = 0; });
+
+            if (skyline) {
+              skyline.position.set(0, 0, 0);
+              skyline.rotation.set(0, 0, 0);
+            }
+
+            uav.position.set(25, 55, 35);
+
+            // Orbit around 12th floor office window
+            const camAngle = elapsed * 0.2;
+            cam.position.x = Math.sin(camAngle) * 16.0;
+            cam.position.y = floor12Y + 2.5 + Math.sin(elapsed * 0.5) * 0.4;
+            cam.position.z = Math.cos(camAngle) * 16.0;
+            cam.lookAt(0, floor12Y + 1.2, 0);
             break;
           }
 
           case 'landslide': {
+            // SCENE 2: REALISTIC VIOLENT EARTHQUAKE EFFECTS & 4-SECOND DESTRUCTION DELAY
             const prog = Math.min(1, Math.max(0, sceneProgress));
 
-            // Fast bike comes into the danger zone and gets caught
-            if (prog < 0.4) {
-              bike.visible = true;
-              bike.position.set(4.5, 2.7, 5.0);
-              bike.rotation.set(0, -Math.PI / 2, 0);
+            if (prog < 0.22) {
+              // 1. FIRST 1.9s: VIOLENT P-WAVE & S-WAVE MULTI-AXIS SEISMIC COLLAPSE
+              const pWave = Math.sin(prog * 110) * 2.2;
+              const sWave = Math.cos(prog * 85) * 1.6;
+              const microJitter = (Math.random() - 0.5) * 0.8;
+
+              standing.visible = true;
+              standing.position.x = pWave + microJitter;
+              standing.position.z = sWave + microJitter;
+
+              // Tower collapses downward, buckling floors & shearing columns
+              const collapseSink = prog / 0.22;
+              standing.scale.y = Math.max(0.05, 1.0 - collapseSink * 0.95);
+              standing.position.y = -collapseSink * 18.0;
+              standing.rotation.z = collapseSink * 0.18; // structural lean before catastrophic plunge
+
+              // Surrounding city skyscrapers sway and tilt under seismic shear!
+              if (skyline) {
+                skyline.position.x = pWave * 0.45;
+                skyline.rotation.z = Math.sin(prog * 45) * 0.06;
+              }
+
+              // Expanding red seismic ground shockwave rings radiating from epicenter
+              seismicRingsRef.current.forEach((sr, idx) => {
+                const ringProgress = (prog * 4.5 + idx * 0.3) % 1.0;
+                const ringScale = 1.0 + ringProgress * 36.0;
+                sr.scale.set(ringScale, ringScale, ringScale);
+                (sr.material as THREE.MeshBasicMaterial).opacity = (1.0 - ringProgress) * 0.9;
+              });
+
+              // Explosive dust storm billows upwards
+              rubble.visible = prog > 0.08;
+              dustMat.opacity = Math.sin((prog / 0.22) * Math.PI) * 0.98;
+
+              // Intense camera shaking impact
+              cam.position.x = 18.0 + (pWave + microJitter) * 2.4;
+              cam.position.y = 12.0 - prog * 5 + (sWave * 0.6);
+              cam.position.z = 24.0 + microJitter * 2.2;
+              cam.lookAt(0, 8.0, 0);
             } else {
-              // Struck & toppled under rockfall
-              bike.rotation.z = Math.PI / 2.2;
-              bike.position.y = 2.4;
-            }
+              // 2. FULL 4-SECOND DELAY EMPHASIZING DESTRUCTION (prog 0.22 to 0.70)
+              // Building is COMPLETELY DESTROYED AND LEVELED TO THE GROUND
+              standing.visible = false;
+              rubble.visible = true;
+              dustMat.opacity = Math.max(0.12, (1.0 - (prog - 0.22) / 0.78) * 0.8);
 
-            // Realistic Landslide Rockfall Cascade
-            rockMeshes.forEach((r, idx) => {
-              const rockDelay = (idx / rockMeshes.length) * 0.35;
-              const rockProg = Math.min(1, Math.max(0, (prog - rockDelay) / 0.65));
+              seismicRingsRef.current.forEach((sr) => {
+                (sr.material as THREE.MeshBasicMaterial).opacity = 0;
+              });
 
-              // Arc down the mountain slope
-              r.mesh.position.y = r.origY + (r.targetY - r.origY) * rockProg;
-              r.mesh.position.x = THREE.MathUtils.lerp(r.origX, r.targetX, rockProg);
-              r.mesh.position.z = THREE.MathUtils.lerp(r.origZ, r.targetZ, rockProg);
+              if (skyline) {
+                skyline.position.set(0, 0, 0);
+                skyline.rotation.set(0, 0, 0);
+              }
 
-              r.mesh.rotation.x += r.rotSpeed.x;
-              r.mesh.rotation.y += r.rotSpeed.y;
-              r.mesh.rotation.z += r.rotSpeed.z;
-            });
+              // SMOOTH ASCENT INTO 90° OVERHEAD TOP VIEW
+              // Holds for the full 4 seconds slowly orbiting around the ruins
+              const topProg = Math.min(1, (prog - 0.22) / 0.25);
+              const orbitAngle = elapsed * 0.12;
 
-            // Dust storm swells
-            if (prog > 0.2) {
-              dustMat.opacity = Math.sin(prog * Math.PI) * 0.75;
-            }
-
-            // Bike and rider completely buried underneath rubble after prog > 0.52
-            if (prog > 0.52) {
-              bike.visible = false;
-            }
-
-            // CAMERA MOTION: TRANSITION TO TOP VIEW (AERIAL NADIR) AFTER LANDSLIDE
-            // When prog > 0.55, camera climbs directly overhead looking down
-            if (prog < 0.55) {
-              // Ground impact view
-              cam.position.x = 9.0 + Math.sin(prog * 2) * 2;
-              cam.position.y = 7.0 + prog * 4;
-              cam.position.z = 15.0 - prog * 3;
-              cam.lookAt(4.5, 3.0, 5.0);
-            } else {
-              // TOP VIEW: 90-degree overhead nadir view showing traveler is completely buried!
-              const topProg = (prog - 0.55) / 0.45;
-              cam.position.x = THREE.MathUtils.lerp(11.0, 4.5, topProg);
-              cam.position.y = THREE.MathUtils.lerp(11.0, 36.0, topProg); // High altitude overhead
-              cam.position.z = THREE.MathUtils.lerp(12.0, 5.0, topProg);
-              cam.lookAt(4.5, 2.5, 5.0); // Looking straight down at debris
+              cam.position.x = THREE.MathUtils.lerp(18.0, Math.sin(orbitAngle) * 6.0, topProg);
+              cam.position.y = THREE.MathUtils.lerp(10.0, 52.0, topProg); // High altitude overhead nadir
+              cam.position.z = THREE.MathUtils.lerp(24.0, Math.cos(orbitAngle) * 6.0 + 0.1, topProg);
+              cam.lookAt(0, 0, 0); // Looking straight down at the leveled rubble pile
             }
             break;
           }
 
-          case 'transition':
+          case 'transition': {
+            // SCENE 3: SHOW CLEARLY ONLY THE DRONE TRAVELING FROM LONG DISTANCE
+            // Background city/disaster is not in focus; camera tracks ONLY the orange drone in open sky!
+            standing.visible = false;
+            rubble.visible = false; // focus entirely on drone flight
+            dustMat.opacity = 0;
+
+            const tProg = Math.min(1, Math.max(0, sceneProgress));
+
+            // Drone travels across long distance: from far horizon (-110, 65, -130) rushing forward to (-15, 38, 10)
+            const uavStartX = -95;
+            const uavStartY = 62;
+            const uavStartZ = -130;
+
+            const uavEndX = -10;
+            const uavEndY = 36;
+            const uavEndZ = 15;
+
+            uav.position.x = THREE.MathUtils.lerp(uavStartX, uavEndX, tProg);
+            uav.position.y = THREE.MathUtils.lerp(uavStartY, uavEndY, tProg) + Math.sin(tProg * Math.PI) * 4;
+            uav.position.z = THREE.MathUtils.lerp(uavStartZ, uavEndZ, tProg);
+
+            // Aerodynamic high-speed cruising bank angle & pitch
+            uav.rotation.x = 0.08;
+            uav.rotation.y = -0.7 + Math.sin(elapsed * 1.5) * 0.04;
+            uav.rotation.z = -0.32; // Banking left as it turns toward city
+
+            // CAMERA DEDICATED TRACKING SHOT: Sits alongside & slightly behind the drone
+            // Showing clearly ONLY the orange drone, spinning props, and aerodynamic airframe!
+            cam.position.x = uav.position.x - 7.0;
+            cam.position.y = uav.position.y + 2.2;
+            cam.position.z = uav.position.z + 11.5;
+            cam.lookAt(uav.position.x + 2.0, uav.position.y, uav.position.z - 2.0);
+            break;
+          }
+
           case 'uav_arrival': {
-            rockMeshes.forEach(r => {
-              r.mesh.position.set(r.targetX, r.targetY, r.targetZ);
-            });
-            bike.visible = false;
-            dustMat.opacity = 0.1;
+            // SCENE 4: DRONE ENTERS THE DISASTER ZONE & TRANSITIONS OVER THE RUBBLE
+            standing.visible = false; // Building is permanently destroyed
+            rubble.visible = true;    // Collapsed earthquake rubble is now revealed beneath!
+            dustMat.opacity = 0.15;
 
-            const arrivalProg = Math.min(1, sceneProgress);
-            uav.visible = true;
+            const arrProg = Math.min(1, Math.max(0, sceneProgress));
 
-            const targetUavX = 4.5;
-            const targetUavY = 11.5;
-            const targetUavZ = 7.5;
+            // Drone completes approach from city perimeter into precision hover above rubble
+            const approachX = THREE.MathUtils.lerp(-10, 0, arrProg);
+            const approachY = THREE.MathUtils.lerp(36, 16.0, arrProg);
+            const approachZ = THREE.MathUtils.lerp(15, 5.0, arrProg);
 
-            uav.position.x = THREE.MathUtils.lerp(28, targetUavX, arrivalProg);
-            uav.position.y = THREE.MathUtils.lerp(38, targetUavY, arrivalProg);
-            uav.position.z = THREE.MathUtils.lerp(35, targetUavZ, arrivalProg);
+            uav.position.set(approachX, approachY, approachZ);
 
-            uav.rotation.x = THREE.MathUtils.lerp(0.35, 0.05, arrivalProg);
-            uav.rotation.y = -Math.PI / 2 + Math.sin(elapsed) * 0.04;
-            uav.rotation.z = Math.sin(elapsed * 1.8) * 0.02;
+            // Flaring nose up to decelerate from 85 km/h cruise into VTOL hover
+            uav.rotation.x = THREE.MathUtils.lerp(0.35, 0.04, arrProg);
+            uav.rotation.y = THREE.MathUtils.lerp(-0.7, -Math.PI / 2, arrProg);
+            uav.rotation.z = THREE.MathUtils.lerp(-0.32, 0.0, arrProg);
 
-            cam.position.set(12, 14, 22);
-            cam.lookAt(uav.position.x, uav.position.y - 2, uav.position.z);
+            // Wide camera sweep revealing the drone entering the disaster zone over the rubble
+            cam.position.x = THREE.MathUtils.lerp(-15, 16, arrProg);
+            cam.position.y = THREE.MathUtils.lerp(28, 22, arrProg);
+            cam.position.z = THREE.MathUtils.lerp(32, 28, arrProg);
+            cam.lookAt(0, 2.5, 0); // Focus on the disaster rubble mound
             break;
           }
 
@@ -600,19 +673,19 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
           case 'location_map':
           case 'lora_comm':
           case 'rescue_verified': {
-            uav.position.set(4.5, 11.2 + Math.sin(elapsed * 1.5) * 0.2, 5.5);
+            // SENSING & RESCUE: THE BUILDING IS PERMANENTLY COLLAPSED RUBBLE!
+            standing.visible = false;
+            rubble.visible = true;
+
+            // UAV hovers directly over the collapsed 30-story rubble mound
+            uav.position.set(0, 15.5 + Math.sin(elapsed * 1.5) * 0.2, 5.0);
             uav.rotation.set(0.04, -Math.PI / 2, 0);
 
-            // Aerial observation camera
-            cam.position.x = 4.5 + Math.sin(elapsed * 0.1) * 3;
-            cam.position.y = 15.0;
-            cam.position.z = 16.0;
-            cam.lookAt(4.5, 2.5, 5.0);
-
-            rockMeshes.forEach(r => {
-              r.mesh.position.set(r.targetX, r.targetY, r.targetZ);
-            });
-            bike.visible = false;
+            // Overhead aerial sensor camera angle targeting the disaster ruins
+            cam.position.x = Math.sin(elapsed * 0.1) * 3;
+            cam.position.y = 22.0;
+            cam.position.z = 20.0;
+            cam.lookAt(0, 2.0, 0); // Looking directly at the collapsed rubble pile
             break;
           }
 
@@ -653,8 +726,8 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
             </div>
             <div className="flex items-center gap-4 text-xs font-mono text-white/70">
               <span>FOV: 58°</span>
-              <span>ALT: 42m AGL</span>
-              <span>GPS: 34°10'42.1"N, 77°35'18.4"E</span>
+              <span>ALT: 45m AGL</span>
+              <span>GPS: 28°36'12.4"N, 77°12'45.8"E</span>
             </div>
           </div>
 
@@ -666,18 +739,18 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
 
             {/* Survivor Thermal Detection Box in GREEN */}
             {(currentScene === 'thermal_sensor' || currentScene === 'edge_processing' || visionMode === 'thermal') && (
-              <div className="absolute top-[48%] left-[46%] -translate-x-1/2 -translate-y-1/2 border-2 border-[#10B981] bg-[#10B981]/15 rounded-xl p-3 shadow-[0_0_24px_rgba(16,185,129,0.6)] animate-thermal pointer-events-auto">
+              <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 border-2 border-[#10B981] bg-[#10B981]/15 rounded-xl p-3 shadow-[0_0_24px_rgba(16,185,129,0.6)] animate-thermal pointer-events-auto">
                 <div className="flex items-center justify-between gap-3 text-xs font-mono text-[#10B981] font-bold">
                   <span className="bg-[#10B981] text-black px-1.5 py-0.5 rounded text-[10px]">
                     SURVIVOR DETECTED
                   </span>
-                  <span>97.8% CONF</span>
+                  <span>98.6% CONF</span>
                 </div>
                 <div className="text-[11px] font-mono text-white/90 mt-1">
-                  CORE TEMP: <span className="text-[#10B981] font-bold">36.8°C</span> (DELTA +14.2°C)
+                  CORE TEMP: <span className="text-[#10B981] font-bold">36.8°C</span> (DELTA +16.4°C)
                 </div>
                 <div className="text-[10px] font-mono text-white/60">
-                  DEPTH: ~0.8m UNDER ROCK DEBRIS
+                  LOCATION: 12TH FLOOR SLAB VOID · 2.1m UNDER CONCRETE
                 </div>
               </div>
             )}
@@ -686,7 +759,7 @@ export const CinematicSceneCanvas: React.FC<CinematicSceneCanvasProps> = ({
           {/* Bottom Sensor Footer */}
           <div className="flex items-center justify-between text-xs font-mono text-white/80 bg-black/50 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
             <div>MODE: {currentScene === 'thermal_sensor' ? 'IRONBOW THERMAL' : 'VISIBLE SPECTRUM'}</div>
-            <div>SILENTRESQ ONBOARD SENSING SYSTEM</div>
+            <div>SILENTRESQ ONBOARD JETSON NANO SENSING</div>
           </div>
         </div>
       )}

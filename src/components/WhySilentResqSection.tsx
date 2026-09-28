@@ -202,7 +202,7 @@ export const WhySilentResqSection: React.FC<WhySilentResqSectionProps> = ({
           </div>
 
           <div className="mt-2 text-[10px] font-mono text-white/60 text-center">
-            Features: Orange aerofoil fuselage, exposed Jetson Orin Nano with heatsink, GPS mast, twin vertical tailfins, and 4 corner VTOL motor pods.
+            Features: Orange aerofoil fuselage, exposed Jetson Nano with heatsink, GPS mast, twin vertical tailfins, and 4 corner VTOL motor pods.
           </div>
         </div>
       </main>

@@ -153,14 +153,14 @@ export const UavModel3D: React.FC<UavModel3DProps> = ({
     lensRing.rotateX(Math.PI / 2);
     uavGroup.add(lensRing);
 
-    // 2. Exposed Avionics Deck & Jetson Orin Nano Board
+    // 2. Exposed Avionics Deck & Jetson Nano Board
     // Avionics Tray
     const trayGeo = new THREE.BoxGeometry(0.28, 0.04, 1.2);
     const avionicsTray = new THREE.Mesh(trayGeo, lightOrangeMat);
     avionicsTray.position.set(0, 0.12, 0.1);
     uavGroup.add(avionicsTray);
 
-    // Jetson Orin Nano Edge AI Module
+    // Jetson Nano Edge AI Module
     const jetsonPcb = new THREE.Mesh(
       new THREE.BoxGeometry(0.22, 0.02, 0.28),
       jetsonPcbMat

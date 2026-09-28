@@ -1,12 +1,12 @@
 import React from 'react';
-import { MapPin, Radio, WifiOff, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
+import { MapPin, Radio, WifiOff, ShieldCheck, ArrowRight } from 'lucide-react';
 
 interface SceneLocationLoraOverlayProps {
   stage: 'location' | 'lora';
 }
 
 export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> = ({ stage }) => {
-  const mapImage = '/src/assets/images/ladakh_rescue_terrain_map_1790529192514.jpg';
+  const mapImage = '/src/assets/images/city_earthquake_rescue_grid_map_1790585276798.jpg';
 
   return (
     <div className="absolute inset-0 flex flex-col justify-between p-6 md:p-12 z-20 pointer-events-none select-none">
@@ -18,7 +18,7 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
             SURVIVOR GEOLOCATION
           </div>
           <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#1E1714]/20 text-xs font-mono text-[#1E1714]">
-            SIMULATED COORDINATES: 34°10'42.1"N, 77°35'18.4"E
+            SIMULATED COORDINATES: 28°36'12.4"N, 77°12'45.8"E
           </div>
         </div>
 
@@ -26,7 +26,7 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
         <div className="flex items-center gap-2 font-mono text-xs">
           <div className="bg-[#FF5520] text-white px-3 py-1.5 rounded-xl border-2 border-[#1E1714] flex items-center gap-1.5 font-bold">
             <WifiOff className="w-3.5 h-3.5" />
-            <span>INTERNET ✕ OFFLINE</span>
+            <span>CITY CELLULAR ✕ OFFLINE</span>
           </div>
 
           <div className="bg-[#B9FF66] text-[#1E1714] px-3 py-1.5 rounded-xl border-2 border-[#1E1714] flex items-center gap-1.5 font-bold animate-pulse">
@@ -44,7 +44,7 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
             <div className="md:col-span-7 relative aspect-[4/3] rounded-2xl overflow-hidden border-2 border-[#1E1714] bg-stone-900 shadow-inner">
               <img
                 src={mapImage}
-                alt="Ladakh Topographic Rescue Map"
+                alt="City Earthquake Disaster Rescue Map"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover opacity-90"
               />
@@ -53,7 +53,7 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
               <div className="absolute inset-0 bg-[radial-gradient(#1E1714_1px,transparent_1px)] [background-size:16px_16px] opacity-30" />
 
               {/* Pulsing GREEN Survivor Pin */}
-              <div className="absolute top-[48%] left-[52%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
+              <div className="absolute top-[48%] left-[50%] -translate-x-1/2 -translate-y-1/2 z-20 flex flex-col items-center">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-[#10B981]/30 animate-ping absolute -top-3 -left-3" />
                   <div className="w-6 h-6 rounded-full bg-[#10B981] border-2 border-white shadow-[0_0_16px_#10B981] flex items-center justify-center text-black font-bold text-xs">
@@ -62,14 +62,14 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
                 </div>
 
                 <div className="mt-2 bg-[#1E1714] text-white px-3 py-1 rounded-lg border border-[#10B981] text-[11px] font-mono whitespace-nowrap shadow-md">
-                  <strong className="text-[#10B981]">SURVIVOR LOCATION</strong>
-                  <div>34°10'42.1"N, 77°35'18.4"E</div>
+                  <strong className="text-[#10B981]">30-STORY TOWER RUINS</strong>
+                  <div>28°36'12.4"N, 77°12'45.8"E (Floor 12 Void)</div>
                 </div>
               </div>
 
               {/* UAV Orbit Marker */}
-              <div className="absolute top-[28%] left-[32%] z-20 bg-[#1E1714]/90 text-[#B9FF66] border border-white/20 px-2.5 py-1 rounded text-[10px] font-mono">
-                SILENTRESQ (STATIONARY HOVER)
+              <div className="absolute top-[26%] left-[30%] z-20 bg-[#1E1714]/90 text-[#B9FF66] border border-white/20 px-2.5 py-1 rounded text-[10px] font-mono">
+                SILENTRESQ (URBAN HOVER)
               </div>
             </div>
 
@@ -80,11 +80,11 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
                   Offline LoRa Relay
                 </span>
                 <h3 className="font-display font-extrabold text-2xl text-[#1E1714] mt-2 leading-tight">
-                  Zero Internet. <br />
-                  Direct Mountain Link.
+                  Zero Network. <br />
+                  Direct Urban Link.
                 </h3>
                 <p className="text-xs text-[#1E1714]/80 mt-2 font-medium leading-relaxed">
-                  In zero-cellular remote valleys, SilentResQ broadcasts compressed coordinates and evidence packet over long-range LoRa radio to base relay hubs.
+                  When earthquake tremors sever fiber and cellular towers, SilentResQ broadcasts compressed coordinates and thermal evidence over long-range LoRa to urban emergency command.
                 </p>
               </div>
 
@@ -98,14 +98,14 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
                   <ArrowRight className="w-4 h-4 rotate-90" />
                 </div>
                 <div className="flex items-center justify-between text-white/90">
-                  <span>MOUNTAIN RELAY HUB</span>
+                  <span>URBAN RELAY HUB</span>
                   <span className="text-[#B9FF66]">PACKET ACK</span>
                 </div>
                 <div className="flex justify-center text-white/40">
                   <ArrowRight className="w-4 h-4 rotate-90" />
                 </div>
                 <div className="flex items-center justify-between text-[#10B981] font-bold">
-                  <span>RESCUE TEAM</span>
+                  <span>DISASTER RESCUE UNIT</span>
                   <span className="bg-[#10B981] text-black px-1.5 py-0.5 rounded text-[10px]">
                     NOTIFIED ✓
                   </span>
@@ -117,9 +117,9 @@ export const SceneLocationLoraOverlay: React.FC<SceneLocationLoraOverlayProps> =
                 <ShieldCheck className="w-6 h-6 text-[#10B981] shrink-0" />
                 <div className="text-xs font-medium">
                   <strong className="font-bold text-[#10B981] uppercase block">
-                    Rescue Team Dispatched
+                    USAR Teams Dispatched
                   </strong>
-                  Coordinates & thermal crop packet received at base operations.
+                  Target coordinates: 12th floor structural void.
                 </div>
               </div>
             </div>

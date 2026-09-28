@@ -66,7 +66,7 @@ export const FinalHero: React.FC<FinalHeroProps> = ({ onReplay, onExploreTech })
               AI-POWERED
             </div>
             <p className="text-[10px] text-[#1E1714]/80 font-mono mt-0.5">
-              Jetson Orin Nano thermal net
+              Jetson Nano thermal net
             </p>
           </div>
 

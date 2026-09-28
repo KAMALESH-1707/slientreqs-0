@@ -12,8 +12,8 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
 }) => {
   const [sliderPos, setSliderPos] = useState<number>(mode === 'rgb' ? 100 : mode === 'thermal' ? 0 : 50);
 
-  const rgbImage = '/src/assets/images/mountain_landslide_debris_1790529166240.jpg';
-  const thermalImage = '/src/assets/images/aerial_thermal_flir_survivor_1790529179672.jpg';
+  const rgbImage = '/src/assets/images/earthquake_city_collapsed_rubble_1790585239910.jpg';
+  const thermalImage = '/src/assets/images/earthquake_thermal_flir_survivor_1790585257818.jpg';
 
   const isThermalActive = sliderPos < 90;
 
@@ -28,7 +28,7 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
           </div>
 
           <div className="hidden sm:inline-block bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-[#1E1714]/20 text-xs font-mono text-[#1E1714]">
-            ALTITUDE: 42M · NADIR -85° · FLIR LWIR CORE
+            ALTITUDE: 45M · OVER 30-STORY COLLAPSE · FLIR LWIR CORE
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
         {/* Background Layer: FLIR Thermal Sensor Image */}
         <img
           src={thermalImage}
-          alt="Thermal FLIR UAV Sensor View"
+          alt="Thermal FLIR UAV Sensor View of Earthquake Rubble"
           referrerPolicy="no-referrer"
           className="absolute inset-0 w-full h-full object-cover"
         />
@@ -91,15 +91,15 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
         >
           <img
             src={rgbImage}
-            alt="RGB Optical UAV Sensor View"
+            alt="RGB Optical UAV Sensor View of Collapsed Building"
             referrerPolicy="no-referrer"
             className="absolute inset-0 w-full h-full object-cover max-w-none"
             style={{ width: '100%', minWidth: '100%', height: '100%' }}
           />
 
           {/* Label inside RGB side */}
-          <div className="absolute top-4 left-4 bg-black/70 text-white font-mono text-xs px-3 py-1.5 rounded-lg border border-white/20">
-            RGB OPTICAL · NORMAL SIGHT INSUFFICIENT
+          <div className="absolute top-4 left-4 bg-black/75 text-white font-mono text-xs px-3 py-1.5 rounded-lg border border-white/20">
+            RGB OPTICAL · 30-FLOOR CONCRETE COLLAPSE · NORMAL VISION IS INSUFFICIENT
           </div>
         </div>
 
@@ -116,7 +116,7 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
         {/* Label inside Thermal side */}
         <div className="absolute top-4 right-4 bg-black/80 text-[#10B981] font-mono text-xs px-3 py-1.5 rounded-lg border border-[#10B981]/40 flex items-center gap-2 z-10">
           <span className="w-2 h-2 rounded-full bg-[#10B981] animate-ping" />
-          LWIR 8-14μm IRONBOW THERMAL
+          LWIR 8-14μm FLIR THERMAL CORE
         </div>
 
         {/* Thermal Scanline Overlay */}
@@ -124,7 +124,7 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
 
         {/* SURVIVOR DETECTION GREEN HIGHLIGHT (Visible when thermal spectrum is engaged) */}
         {isThermalActive && (
-          <div className="absolute top-[48%] right-[28%] -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto">
+          <div className="absolute top-[50%] left-[50%] -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-auto">
             {/* Target Reticle in GREEN */}
             <div className="relative border-2 border-[#10B981] bg-[#10B981]/20 rounded-2xl p-4 shadow-[0_0_35px_rgba(16,185,129,0.7)] animate-thermal">
               {/* Corner Crosshair Accents */}
@@ -138,13 +138,13 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
                   SURVIVOR DETECTED
                 </span>
                 <span className="text-xs font-mono text-[#10B981] font-bold">
-                  98.4% CONF
+                  98.6% CONF
                 </span>
               </div>
 
               <div className="text-xs font-mono text-white mt-1.5 space-y-0.5">
-                <div>TEMP: <strong className="text-[#10B981]">36.8°C</strong> (AMBIENT 18.2°C)</div>
-                <div className="text-white/70 text-[11px]">THERMAL DELTA: +18.6°C HEAT ANOMALY</div>
+                <div>TEMP: <strong className="text-[#10B981]">36.8°C</strong> (AMBIENT 17.5°C)</div>
+                <div className="text-white/80 text-[11px]">LOCATION: 12TH FLOOR OFFICE SLAB VOID</div>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@ export const SceneVisionSensorOverlay: React.FC<SceneVisionSensorOverlayProps> =
             Thermal Advantage
           </span>
           <h4 className="font-display font-bold text-lg md:text-xl text-[#1E1714] mt-1">
-            {sliderPos > 70 ? 'Normal RGB vision fails to pierce mountain debris.' : 'Thermal sensor reveals sub-surface human body heat.'}
+            {sliderPos > 70 ? 'Normal RGB vision fails to pierce collapsed concrete building slabs.' : 'Thermal sensor detects human body heat through collapsed 12th floor rubble.'}
           </h4>
         </div>
 
